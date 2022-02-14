@@ -1,0 +1,17 @@
+{
+  "name": "players-backend",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "dependencies": {
+    "apollo-datasource-graphql": "^1.3.2",
+    "apollo-server-express": "^3.6.3",
+    "cors": "^2.8.5",
+    "express": "^4.17.2",
+    "graphql": "^16.3.0",
+    "nodemon": "^2.0.15"
+  },
+  "scripts": {
+    "start": "nodemon index.js"
+  }
+}
