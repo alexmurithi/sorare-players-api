@@ -1,6 +1,7 @@
 const { ApolloServer } = require("apollo-server-express");
 const express = require("express");
 const cors = require("cors");
+require("dotenv").config();
 
 const typeDefs = require("./src/Schemas/index");
 const resolvers = require("./src/Resolvers/index");
@@ -12,6 +13,7 @@ const app = express();
 const server = new ApolloServer({
   typeDefs,
   resolvers,
+  introspection: true,
   dataSources: () => ({
     playerInfoAPI: new PlayerInfoAPI(),
   }),
