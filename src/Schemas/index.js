@@ -5,10 +5,31 @@ const typeDefs = gql`
 
   type Query {
     text: String!
-    playerInfo(slug: String!): [PlayerInfo!]
+    club(slug: String!): Club!
   }
 
-  type PlayerInfo {
+  type Club {
+    id: ID!
+    name: String!
+    pictureSecondaryUrl: String
+    domesticLeague: DomesticLeague
+    players(first: Int, after: String): PlayerConnection!
+  }
+
+  type PlayerConnection {
+    edges: [playerEdge!]!
+    nodes: [Player!]!
+    pageInfo: PageInfo!
+  }
+
+  type PageInfo {
+    endCursor: String
+    hasNextPage: Boolean!
+    hasPreviousPage: Boolean!
+    startCursor: String
+  }
+
+  type Player {
     id: ID!
     displayName: String!
     slug: String!
@@ -24,6 +45,11 @@ const typeDefs = gql`
     allSo5Scores: So5ScoreConnection!
   }
 
+  type playerEdge {
+    cursor: String!
+    node: Player
+  }
+
   type Country {
     code: String!
   }
@@ -37,13 +63,6 @@ const typeDefs = gql`
     playingStatus: String
   }
 
-  type Club {
-    id: ID!
-    name: String!
-    pictureSecondaryUrl: String
-    domesticLeague:DomesticLeague
-  }
-
   type So5ScoreConnection {
     nodes: [So5Score!]!
   }
@@ -51,9 +70,9 @@ const typeDefs = gql`
   type So5Score {
     score: Float
   }
-  type DomesticLeague{
-    id:ID!
-    displayName:String!
+  type DomesticLeague {
+    id: ID!
+    displayName: String!
   }
 `;
 

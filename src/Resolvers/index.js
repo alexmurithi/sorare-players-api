@@ -1,14 +1,14 @@
 const dateScalar = require("../Utils/CustomDate");
 
 const resolvers = {
-    
   Date: dateScalar,
 
   Query: {
-    text: () => "Hello There!",
+    async club(_, { slug }, { dataSources }, info) {
+      const { after } = info.variableValues;
 
-    playerInfo: (_, { slug }, { dataSources }) =>
-      dataSources.playerInfoAPI.getPlayerInfo(slug),
+      return dataSources.playerInfoAPI.getPlayerInfo(slug, after);
+    },
   },
 };
 

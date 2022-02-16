@@ -2,45 +2,54 @@ const { GraphQLDataSource } = require("apollo-datasource-graphql");
 const { gql } = require("apollo-server-express");
 
 const PLAYER_INFO = gql`
-  query PLAYER_INFO($slug: String!) {
+  query PLAYER_INFO($slug: String!, $after: String) {
     club(slug: $slug) {
-      players {
-        nodes {
-          id
-          displayName
-          slug
-          age
-          birthDate
-          position
-          country {
+      players(first: 50, after: $after) {
+        pageInfo {
+          endCursor
+          hasNextPage
+          hasPreviousPage
+          startCursor
+        }
+        edges {
+          # start node
+          node {
+            id
+            displayName
             slug
-            code
-          }
-          subscriptionsCount
-          pictureUrl
-          shirtNumber
-          activeClub {
-            id
-            name
-            pictureSecondaryUrl
-            domesticLeague {
+            age
+            birthDate
+            position
+            country {
+              slug
+              code
+            }
+            subscriptionsCount
+            pictureUrl
+            shirtNumber
+            activeClub {
               id
-              displayName
+              name
+              pictureSecondaryUrl
+              domesticLeague {
+                id
+                displayName
+              }
             }
-          }
-          status {
-            id
-            lastFifteenSo5Appearances
-            lastFifteenSo5AverageScore
-            lastFiveSo5Appearances
-            lastFiveSo5AverageScore
-            playingStatus
-          }
-          allSo5Scores(first: 50) {
-            nodes {
-              score
+            status {
+              id
+              lastFifteenSo5Appearances
+              lastFifteenSo5AverageScore
+              lastFiveSo5Appearances
+              lastFiveSo5AverageScore
+              playingStatus
             }
-          }
+            allSo5Scores {
+              nodes {
+                score
+              }
+            }
+          } #end node
         }
       }
     }
@@ -53,64 +62,78 @@ class PlayerInfoAPI extends GraphQLDataSource {
     this.baseURL = "https://api.sorare.com/graphql/";
   }
 
-  async getPlayerInfo(slug) {
+  async getPlayerInfo(slug, after) {
     try {
       const response = await this.query(PLAYER_INFO, {
         variables: {
           slug,
+          after,
         },
       });
 
-      // console.log(response.data.club.players.nodes);
-
-      return Array.isArray(response.data.club.players.nodes)
-        ? response.data.club.players.nodes.map((player) =>
-            this.playerInfoReducer(player)
-          )
-        : [];
+      return this.playerInfoReducer(response.data.club.players);
     } catch (err) {
       console.log(err);
+      throw new Error(err.message);
     }
   }
 
-  playerInfoReducer(player) {
+  playerInfoReducer(data) {
     return {
-      id: player.id,
-      displayName: player.displayName,
-      slug: player.slug,
-      age: player.age,
-      birthDate: player.birthDate,
-      position: player.position,
-      country: {
-        code: player.country.code || player.country.slug,
-      },
-      subscriptionsCount: player.subscriptionsCount,
-      pictureUrl: player.pictureUrl,
-      shirtNumber: player.shirtNumber,
-      status: {
-        id: player.status.id,
-        lastFifteenSo5Appearances: player.status.lastFifteenSo5Appearances,
-        lastFifteenSo5AverageScore: player.status.lastFifteenSo5AverageScore,
-        lastFiveSo5Appearances: player.status.lastFiveSo5Appearances,
-        lastFiveSo5AverageScore: player.status.lastFiveSo5AverageScore,
-        playingStatus: player.status.playingStatus,
-      },
-      allSo5Scores: {
-        nodes: player.allSo5Scores.nodes.map((score) => ({
-          score: score.score,
+      players: {
+        pageInfo: {
+          endCursor: data.pageInfo.endCursor,
+          startCursor: data.pageInfo.startCursor,
+          hasNextPage: data.pageInfo.hasNextPage,
+          hasPreviousPage: data.pageInfo.hasPreviousPage,
+        },
+
+        edges: data.edges.map((player) => ({
+          node: {
+            id: player.node.id,
+            displayName: player.node.displayName,
+            slug: player.node.slug,
+            age: player.node.age,
+            birthDate: player.node.birthDate,
+            position: player.node.position,
+            subscriptionsCount: player.node.subscriptionsCount,
+            pictureUrl: player.node.pictureUrl,
+            shirtNumber: player.node.shirtNumber,
+            activeClub: player.node.activeClub
+              ? {
+                  id: player.node.activeClub.id,
+                  name: player.node.activeClub.name,
+                  pictureSecondaryUrl:
+                    player.node.activeClub.pictureSecondaryUrl,
+                  domesticLeague: player.node.activeClub.domesticLeague && {
+                    id: player.node.activeClub.domesticLeague.id,
+                    displayName:
+                      player.node.activeClub.domesticLeague.displayName,
+                  },
+                }
+              : null,
+            allSo5Scores: {
+              nodes: player.node.allSo5Scores.nodes.map((score) => ({
+                score: score.score,
+              })),
+            },
+            status: {
+              id: player.node.status.id,
+              lastFifteenSo5Appearances:
+                player.node.status.lastFifteenSo5Appearances,
+              lastFifteenSo5AverageScore:
+                player.node.status.lastFifteenSo5AverageScore,
+              lastFiveSo5Appearances: player.node.status.lastFiveSo5Appearances,
+              lastFiveSo5AverageScore:
+                player.node.status.lastFiveSo5AverageScore,
+              playingStatus: player.node.status.playingStatus,
+            },
+            country: {
+              code: player.node.country.code || player.country.slug,
+            },
+          },
         })),
       },
-      activeClub: player.activeClub
-        ? {
-            id: player.activeClub.id,
-            name: player.activeClub.name,
-            pictureSecondaryUrl: player.activeClub.pictureSecondaryUrl,
-            domesticLeague: player.activeClub.domesticLeague && {
-              id: player.activeClub.domesticLeague.id,
-              displayName: player.activeClub.domesticLeague.displayName,
-            },
-          }
-        : null,
     };
   }
 }

@@ -13,6 +13,9 @@ const app = express();
 const server = new ApolloServer({
   typeDefs,
   resolvers,
+ engine: {
+    reportSchema: true,
+  },
   introspection: true,
   dataSources: () => ({
     playerInfoAPI: new PlayerInfoAPI(),
